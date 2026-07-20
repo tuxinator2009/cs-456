@@ -1,110 +1,88 @@
-const mongoose = require('mongoose');
-const Trip = require('../models/travlr'); // Register model
-const Model = mongoose.model('trips');
+const tripService = require('../services/trip.service');
+const ApplicationError = require('../errors/application-error');
 
-// GET: /trips - lists all the trips
-// Regardless of outcome, response must include HTML status code
-// and JSON message to the requesting client
-const tripsList = async(req, res) => {
-    const q = await Model
-        .find({}) // No filter, return all records
-        .exec();
-
-        // Uncomment the following line to show results of query
-        // on the console
-        // console.log(q);
-
-    if (!q)
-    { // Database returned no data
-        return res
-            .status(404)
-            .json(err);
-    } else { // Return resulting trip list
-        return res
-            .status(200)
-            .json(q);
+/**
+ * Converts known application failures and unexpected errors into
+ * consistent JSON responses.
+ */
+const handleControllerError = (res, error) => {
+    if (error instanceof ApplicationError) {
+        return res.status(error.status).json({
+            code: error.code,
+            message: error.message
+        });
     }
-};
 
-// GET: /trips/:tripCode - lists a single trip
-// Regardless of outcome, response must include HTML status code
-// and JSON message to the requesting client
-const tripsFindByCode = async(req, res) => {
-    const q = await Model
-        .find({'code' : req.params.tripCode }) // Return single record
-        .exec();
-
-        // Uncomment the following line to show results of query
-        // on the console
-        // console.log(q);
-
-    if (!q)
-    { // Database returned no data
-        return res
-            .status(404)
-            .json(err);
-    } else { // Return resulting trip list
-        return res
-            .status(200)
-            .json(q);
+    // Mongoose validation errors should be reported as bad requests.
+    if (error.name === 'ValidationError') {
+        return res.status(400).json({
+            code: 'DATABASE_VALIDATION_ERROR',
+            message: error.message
+        });
     }
-};
 
-const tripsAddTrip = async(req, res) => {
-    const newTrip = new Trip({
-        code: req.body.code,
-        name: req.body.name,
-        length: req.body.length,
-        start: req.body.start,
-        resort: req.body.resort,
-        perPerson: req.body.perPerson,
-        image: req.body.image,
-        description: req.body.description
+    // Duplicate index errors are raised by MongoDB with code 11000.
+    if (error.code === 11000) {
+        return res.status(409).json({
+            code: 'DUPLICATE_TRIP',
+            message: 'A trip with the supplied identifying value already exists.'
+        });
+    }
+
+    console.error(error);
+
+    return res.status(500).json({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'An unexpected server error occurred.'
     });
+};
 
-    const q = await newTrip.save();
+// GET: /api/trips
+const tripsList = async (req, res) => {
+    try {
+        const trips = await tripService.listTrips();
 
-    if (!q)
-    {
-        return res
-        .status(400)
-        .json(err);
-    } else {
-        return res
-        .status(201)
-        .json(q);
+        return res.status(200).json(trips);
+    } catch (error) {
+        return handleControllerError(res, error);
     }
 };
 
-const tripsUpdateTrip = async(req, res) => {
-    console.log(req.params);
-    console.log(req.body);
+// GET: /api/trips/:tripCode
+const tripsFindByCode = async (req, res) => {
+    try {
+        const trips = await tripService.findTripByCode(
+            req.params.tripCode
+        );
 
-    const q = await Model
-    .findOneAndUpdate(
-        { 'code' : req.params.tripCode },
-        {
-            code: req.body.code,
-            name: req.body.name,
-            length: req.body.length,
-            start: req.body.start,
-            resort: req.body.resort,
-            perPerson: req.body.perPerson,
-            image: req.body.image,
-            description: req.body.description
-        }
-     )
-    .exec();
+        return res.status(200).json(trips);
+    } catch (error) {
+        return handleControllerError(res, error);
+    }
+};
 
-    if (!q)
-    {
-        return res
-        .status(400)
-        .json(err);
-    } else {
-        return res
-        .status(201)
-        .json(q);
+// POST: /api/trips
+const tripsAddTrip = async (req, res) => {
+    try {
+        const trip = await tripService.createTrip(req.body);
+
+        return res.status(201).json(trip);
+    } catch (error) {
+        return handleControllerError(res, error);
+    }
+};
+
+// PUT: /api/trips/:tripCode
+const tripsUpdateTrip = async (req, res) => {
+    try {
+        const trip = await tripService.updateTrip(
+            req.params.tripCode,
+            req.body
+        );
+
+        return res.status(200).json(trip);
+    } catch (error) {
+        return handleControllerError(res, error);
     }
 };
 
