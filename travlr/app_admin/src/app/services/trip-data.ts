@@ -1,64 +1,154 @@
-import { HttpClient } from '@angular/common/http';
+import {
+  Injectable
+} from '@angular/core';
+
+import {
+  HttpClient,
+  HttpParams
+} from '@angular/common/http';
+
 import { Observable } from 'rxjs';
+
 import { User } from '../models/user';
 import { AuthResponse } from '../models/auth-response';
-import { BROWSER_STORAGE } from '../storage';
-import { Inject, Injectable } from '@angular/core';
-
 import { Trip } from '../models/trip';
+import {
+  TripSearchCriteria
+} from '../models/trip-search-criteria';
 
 @Injectable({
   providedIn: 'root',
 })
-
 export class TripData {
+  private readonly baseUrl = 'http://localhost:3000/api';
+    private readonly tripUrl = `${this.baseUrl}/trips`;
 
-  constructor(
-    private http: HttpClient,
-      @Inject(BROWSER_STORAGE) private storage: Storage
-  ) {}
+    constructor(private http: HttpClient) {}
 
-  baseUrl = 'http://localhost:3000/api';
-  url = 'http://localhost:3000/api/trips';
+    public getTrips(
+      criteria?: Partial<TripSearchCriteria>
+    ): Observable<Trip[]> {
+      let params = new HttpParams();
 
-  getTrips() : Observable<Trip[]> {
-    return this.http.get<Trip[]>(this.url);
-  }
+      if (criteria?.keyword?.trim()) {
+        params = params.set(
+          'keyword',
+          criteria.keyword.trim()
+        );
+      }
 
-  addTrip(formData: Trip) : Observable<Trip> {
-    return this.http.post<Trip>(this.url, formData);
-  }
+      if (criteria?.resort?.trim()) {
+        params = params.set(
+          'resort',
+          criteria.resort.trim()
+        );
+      }
 
-  getTrip(tripCode: string) : Observable<Trip[]> {
-    // console.log('Inside TripData::getTrips');
-    return this.http.get<Trip[]>(this.url + '/' + tripCode);
-  }
+      if (
+        criteria?.minPrice !== null &&
+        criteria?.minPrice !== undefined
+      ) {
+        params = params.set(
+          'minPrice',
+          criteria.minPrice.toString()
+        );
+      }
 
-  updateTrip(formData: Trip) : Observable<Trip> {
-    // console.log('Inside TripData::updateTrip');
-    return this.http.put<Trip>(this.url + '/' + formData.code, formData);
-  }
+      if (
+        criteria?.maxPrice !== null &&
+        criteria?.maxPrice !== undefined
+      ) {
+        params = params.set(
+          'maxPrice',
+          criteria.maxPrice.toString()
+        );
+      }
 
-  // Call to our /login endpoint, returns JWT
-  login(user: User, passwd: string) : Observable<AuthResponse> {
-    // console.log('Inside TripDataService::login');
-    return this.handleAuthAPICall('login', user, passwd);
-  }
-  // Call to our /register endpoint, creates user and returns JWT
-  register(user: User, passwd: string) : Observable<AuthResponse> {
-    // console.log('Inside TripDataService::register');
-    return this.handleAuthAPICall('register', user, passwd);
-  }
-  // helper method to process both login and register methods
-  handleAuthAPICall(endpoint: string, user: User, passwd: string) :
-  Observable<AuthResponse> {
-    // console.log('Inside TripDataService::handleAuthAPICall');
-    let formData = {
-      name: user.name,
-      email: user.email,
-      password: passwd
-    };
-    return this.http.post<AuthResponse>(this.baseUrl + '/' + endpoint,
-                                        formData);
-  }
+      if (
+        criteria?.nights !== null &&
+        criteria?.nights !== undefined
+      ) {
+        params = params.set(
+          'nights',
+          criteria.nights.toString()
+        );
+      }
+
+      if (criteria?.sort) {
+        params = params.set(
+          'sort',
+          criteria.sort
+        );
+      }
+
+      return this.http.get<Trip[]>(
+        this.tripUrl,
+        { params }
+      );
+    }
+
+    public addTrip(
+      formData: Trip
+    ): Observable<Trip> {
+      return this.http.post<Trip>(
+        this.tripUrl,
+        formData
+      );
+    }
+
+    public getTrip(
+      tripCode: string
+    ): Observable<Trip[]> {
+      return this.http.get<Trip[]>(
+        `${this.tripUrl}/${encodeURIComponent(tripCode)}`
+      );
+    }
+
+    public updateTrip(
+      formData: Trip
+    ): Observable<Trip> {
+      return this.http.put<Trip>(
+        `${this.tripUrl}/${encodeURIComponent(formData.code)}`,
+                                 formData
+      );
+    }
+
+    public login(
+      user: User,
+      password: string
+    ): Observable<AuthResponse> {
+      return this.handleAuthAPICall(
+        'login',
+        user,
+        password
+      );
+    }
+
+    public register(
+      user: User,
+      password: string
+    ): Observable<AuthResponse> {
+      return this.handleAuthAPICall(
+        'register',
+        user,
+        password
+      );
+    }
+
+    private handleAuthAPICall(
+      endpoint: string,
+      user: User,
+      password: string
+    ): Observable<AuthResponse> {
+      const formData = {
+        name: user.name,
+        email: user.email,
+        password
+      };
+
+      return this.http.post<AuthResponse>(
+        `${this.baseUrl}/${endpoint}`,
+        formData
+      );
+    }
 }

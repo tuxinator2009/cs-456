@@ -57,3 +57,55 @@
 - Verified that successful login returns users to their originally requested route.
 - Verified that malformed and expired browser tokens fail safely.
 - Verified that the Angular application builds successfully after the enhancement.
+
+## August 2026 — CS 499 Milestone Three: Algorithms and Data Structures
+
+### Trip Discovery Algorithm
+
+- Added a dedicated trip-search algorithm module.
+- Added keyword normalization and HTML-free description searching.
+- Added weighted relevance scoring for:
+  - Exact and partial trip-code matches
+  - Exact and partial trip-name matches
+  - Resort matches
+  - Description matches
+  - Individual keyword-token matches
+- Used a `Set` to eliminate duplicate keyword tokens during scoring.
+- Added parsing functions for the existing string-based price and duration fields.
+- Added numeric filtering by:
+  - Minimum price
+  - Maximum price
+  - Number of nights
+- Added deterministic sorting by:
+  - Relevance
+  - Price ascending
+  - Price descending
+  - Start date
+  - Trip name
+- Added explicit tie-breaking using start date, name, and original position.
+- Added validation for unsupported sort options, invalid numeric input, and reversed price ranges.
+- Added configurable result limits with a maximum server-side cap.
+
+### Database and Service Coordination
+
+- Added repository-level candidate filtering for keyword and resort criteria.
+- Escaped regular-expression characters in user-supplied search values.
+- Reduced unnecessary data transfer by narrowing the candidate set before in-memory scoring.
+- Preserved the existing MongoDB schema so data-type migration remains isolated to the later database milestone.
+- Updated the trip controller to pass HTTP query parameters into the service layer.
+
+### Angular Search Interface
+
+- Added a typed `TripSearchCriteria` model.
+- Added keyword, resort, price-range, duration, and sort controls.
+- Added loading, empty-result, result-count, and error states.
+- Added clear/reset behavior.
+- Updated the Angular data service to build query parameters with `HttpParams`.
+- Removed the redundant component-level `TripData` provider.
+- Improved trip-card input typing and accessibility.
+
+### Testing
+
+- Added Node tests for price parsing, duration parsing, relevance scoring, numeric filtering, and deterministic sorting.
+- Added a root `npm test` command using Node's built-in test runner.
+- Verified valid and invalid search requests through API tests.

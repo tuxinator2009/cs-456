@@ -13,7 +13,6 @@ const handleControllerError = (res, error) => {
         });
     }
 
-    // Mongoose validation errors should be reported as bad requests.
     if (error.name === 'ValidationError') {
         return res.status(400).json({
             code: 'DATABASE_VALIDATION_ERROR',
@@ -21,11 +20,11 @@ const handleControllerError = (res, error) => {
         });
     }
 
-    // Duplicate index errors are raised by MongoDB with code 11000.
     if (error.code === 11000) {
         return res.status(409).json({
             code: 'DUPLICATE_TRIP',
-            message: 'A trip with the supplied identifying value already exists.'
+            message:
+            'A trip with the supplied identifying value already exists.'
         });
     }
 
@@ -40,7 +39,7 @@ const handleControllerError = (res, error) => {
 // GET: /api/trips
 const tripsList = async (req, res) => {
     try {
-        const trips = await tripService.listTrips();
+        const trips = await tripService.listTrips(req.query);
 
         return res.status(200).json(trips);
     } catch (error) {

@@ -1,69 +1,149 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { TripCard } from '../trip-card/trip-card';
+import {
+  Component,
+  OnInit
+} from '@angular/core';
 
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { finalize } from 'rxjs';
+
+import { TripCard } from '../trip-card/trip-card';
 import { TripData } from '../services/trip-data';
 import { Trip } from '../models/trip';
+import {
+  TripSearchCriteria,
+  TripSortOption
+} from '../models/trip-search-criteria';
 
 import { Authentication } from '../services/authentication';
-
-import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-trip-listing',
   standalone: true,
-  imports: [CommonModule, TripCard],
+  imports: [
+    CommonModule,
+    FormsModule,
+    TripCard
+  ],
   templateUrl: './trip-listing.html',
-  styleUrl: './trip-listing.css',
-  providers: [TripData]
+  styleUrl: './trip-listing.css'
 })
 export class TripListing implements OnInit {
+  public trips: Trip[] = [];
+  public message = '';
+  public isLoading = false;
+  public errorMessage = '';
 
-  trips: Trip[] = [];
-  message: string = '';
+  public criteria: TripSearchCriteria =
+    this.createDefaultCriteria();
 
-  constructor(
-    private tripData: TripData,
-    private router: Router,
-    private cdr: ChangeDetectorRef,
-    private authentication : Authentication
-  ) {
-    console.log('trip-listing constructor');
-  }
+    public readonly sortOptions: Array<{
+      value: TripSortOption;
+      label: string;
+    }> = [
+      {
+        value: 'relevance',
+        label: 'Relevance'
+      },
+      {
+        value: 'price-asc',
+        label: 'Price: Low to High'
+      },
+      {
+        value: 'price-desc',
+        label: 'Price: High to Low'
+      },
+      {
+        value: 'start-asc',
+        label: 'Start Date'
+      },
+      {
+        value: 'name-asc',
+        label: 'Trip Name'
+      }
+    ];
 
-  public addTrip(): void {
-    this.router.navigate(['add-trip']);
-  }
+    constructor(
+      private tripData: TripData,
+        private router: Router,
+          private authentication: Authentication
+    ) {}
 
-  private getStuff(): void {
-    this.tripData.getTrips()
+    public ngOnInit(): void {
+      this.searchTrips();
+    }
+
+    public addTrip(): void {
+      this.router.navigate(['add-trip']);
+    }
+
+    public searchTrips(): void {
+      this.errorMessage = '';
+
+      if (
+        this.criteria.minPrice !== null &&
+        this.criteria.maxPrice !== null &&
+        this.criteria.minPrice > this.criteria.maxPrice
+      ) {
+        this.errorMessage =
+        'Minimum price cannot be greater than maximum price.';
+
+      return;
+      }
+
+      this.isLoading = true;
+
+      this.tripData
+      .getTrips(this.criteria)
+      .pipe(
+        finalize(() => {
+          this.isLoading = false;
+        })
+      )
       .subscribe({
-        next: (value: any) => {
-          this.trips = value;
-          if (value.length > 0)
-          {
-            this.message = 'There are ' + value.length + ' trips.available.';
-          }
-          else {
-            this.message = 'There were no trips retrieved from the database.';
-          }
-          console.log(this.message);
+        next: (trips: Trip[]) => {
+          this.trips = trips;
 
-          this.cdr.detectChanges();
+          if (trips.length === 1) {
+            this.message = '1 trip matched the selected criteria.';
+          } else {
+            this.message =
+            `${trips.length} trips matched the selected criteria.`;
+          }
         },
-        error: (error: any) => {
-          console.log('Error: ' + error);
+        error: (error) => {
+          console.error(
+            'Trip search failed.',
+            error
+          );
+
+          this.trips = [];
+          this.message = '';
+          this.errorMessage =
+          error?.error?.message ||
+          'Trips could not be retrieved. Please try again.';
         }
-      })
-  }
+      });
+    }
 
-  ngOnInit(): void {
-    console.log('ngOnInit');
-    this.getStuff();
-  }
+    public clearSearch(): void {
+      this.criteria = this.createDefaultCriteria();
+      this.searchTrips();
+    }
 
-  public isLoggedIn()
-  {
-    return this.authentication.isLoggedIn();
-  }
+    public isLoggedIn(): boolean {
+      return this.authentication.isLoggedIn();
+    }
+
+    private createDefaultCriteria(): TripSearchCriteria {
+      return {
+        keyword: '',
+        resort: '',
+        minPrice: null,
+        maxPrice: null,
+        nights: null,
+        sort: 'relevance'
+      };
+    }
 }

@@ -6,6 +6,47 @@ require('../models/travlr');
 const TripModel = mongoose.model('trips');
 
 /**
+ * Escapes special regular-expression characters from user input.
+ */
+const escapeRegularExpression = (value) => {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
+/**
+ * Returns candidate trips using filters MongoDB can apply efficiently
+ * with the current schema.
+ */
+const findCandidates = async ({
+    keyword = '',
+    resort = '',
+    limit = 100
+} = {}) => {
+    const query = {};
+
+    if (keyword) {
+        const safeKeyword = escapeRegularExpression(keyword);
+        const keywordExpression = new RegExp(safeKeyword, 'i');
+
+        query.$or = [
+            { code: keywordExpression },
+            { name: keywordExpression },
+            { resort: keywordExpression },
+            { description: keywordExpression }
+        ];
+    }
+
+    if (resort) {
+        const safeResort = escapeRegularExpression(resort);
+        query.resort = new RegExp(safeResort, 'i');
+    }
+
+    return TripModel
+    .find(query)
+    .limit(limit)
+    .exec();
+};
+
+/**
  * Returns every trip in the collection.
  */
 const findAll = async () => {
@@ -14,10 +55,6 @@ const findAll = async () => {
 
 /**
  * Returns trips matching a trip code.
- *
- * This currently preserves the original array response expected by the
- * Angular edit component. A later database enhancement can enforce code
- * uniqueness and replace this operation with findOne().
  */
 const findByCode = async (tripCode) => {
     return TripModel.find({ code: tripCode }).exec();
@@ -33,9 +70,6 @@ const create = async (tripData) => {
 
 /**
  * Updates a trip identified by its existing trip code.
- *
- * The new:true option returns the updated record rather than the previous
- * version.
  */
 const updateByCode = async (tripCode, tripData) => {
     return TripModel.findOneAndUpdate(
@@ -49,6 +83,7 @@ const updateByCode = async (tripCode, tripData) => {
 };
 
 module.exports = {
+    findCandidates,
     findAll,
     findByCode,
     create,
