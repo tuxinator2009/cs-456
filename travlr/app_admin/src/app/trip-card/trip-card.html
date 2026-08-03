@@ -25,14 +25,26 @@
       [innerHTML]="trip.description"
     ></p>
 
-    <div *ngIf="isLoggedIn()">
-      <button
-        type="button"
-        class="btn btn-info"
-        (click)="editTrip(trip)"
-      >
-        Edit Trip
-      </button>
-    </div>
+    <div
+  *ngIf="isLoggedIn()"
+  class="trip-actions"
+>
+  <button
+    type="button"
+    class="btn btn-primary"
+    (click)="bookTrip(trip)"
+  >
+    Book Trip
+  </button>
+
+  <button
+    *ngIf="isAdmin()"
+    type="button"
+    class="btn btn-info"
+    (click)="editTrip(trip)"
+  >
+    Edit Trip
+  </button>
+</div>
   </div>
 </div>

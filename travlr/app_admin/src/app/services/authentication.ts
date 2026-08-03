@@ -17,8 +17,10 @@ import { TripData } from './trip-data';
  * Shape of the JWT payload fields used by the Angular application.
  */
 interface TokenPayload {
+  _id?: string;
   email?: string;
   name?: string;
+  role?: 'customer' | 'admin';
   exp?: number;
 }
 
@@ -90,11 +92,15 @@ export class Authentication {
    * This method should be called only after isLoggedIn() returns true.
    */
   public getCurrentUser(): User {
-    const payload = this.decodeToken(this.getToken());
+    const payload =
+    this.decodeToken(
+      this.getToken()
+    );
 
     return {
       email: payload?.email ?? '',
-      name: payload?.name ?? ''
+      name: payload?.name ?? '',
+      role: payload?.role ?? 'customer'
     } as User;
   }
 
@@ -166,5 +172,21 @@ export class Authentication {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Determines whether the current token belongs to an administrator.
+   */
+  public isAdmin(): boolean {
+    if (!this.isLoggedIn()) {
+      return false;
+    }
+
+    const payload =
+    this.decodeToken(
+      this.getToken()
+    );
+
+    return payload?.role === 'admin';
   }
 }

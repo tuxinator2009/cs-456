@@ -1,0 +1,86 @@
+<section>
+  <h2>Booking Summary</h2>
+
+  <p>
+    Confirmed bookings grouped by trip.
+  </p>
+
+  <div
+    *ngIf="errorMessage"
+    class="alert alert-danger"
+    role="alert"
+  >
+    {{ errorMessage }}
+  </div>
+
+  <p
+    *ngIf="isLoading"
+    aria-live="polite"
+  >
+    Loading booking summary...
+  </p>
+
+  <div
+    *ngIf="
+      !isLoading &&
+      !errorMessage &&
+      summary.length === 0
+    "
+    class="alert alert-info"
+  >
+    No confirmed bookings are available.
+  </div>
+
+  <div
+    *ngIf="summary.length > 0"
+    class="table-responsive"
+  >
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Trip</th>
+          <th>Bookings</th>
+          <th>Travelers</th>
+          <th>Revenue</th>
+          <th>First Booking</th>
+          <th>Latest Booking</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let item of summary">
+          <td>
+            {{ item.tripName }}
+            <small>
+              ({{ item.tripCode }})
+            </small>
+          </td>
+
+          <td>{{ item.bookingCount }}</td>
+          <td>{{ item.travelerCount }}</td>
+
+          <td>
+            {{
+              item.totalRevenue |
+              currency:'USD'
+            }}
+          </td>
+
+          <td>
+            {{
+              item.earliestBooking |
+              date:'mediumDate'
+            }}
+          </td>
+
+          <td>
+            {{
+              item.latestBooking |
+              date:'mediumDate'
+            }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

@@ -1,67 +1,97 @@
-const mongoose = require('mongoose');
 const User = require('../models/user');
 const passport = require('passport');
 
-const register = async(req, res) => {
-    // Validate message to insure that all parameters are present
-    if (!req.body.name || !req.body.email || !req.body.password) {
-        return res
-        .status(400)
-        .json({"message": "All fields required"});
-    }
+/**
+ * Registers a customer account.
+ *
+ * Public registration never accepts a role from the request body.
+ */
+const register = async (req, res) => {
+    try {
+        if (
+            !req.body.name ||
+            !req.body.email ||
+            !req.body.password
+        ) {
+            return res.status(400).json({
+                message: 'All fields are required.'
+            });
+        }
 
-    const user = new User(
-        {
-            name: req.body.name,   // Set User name
-            email: req.body.email, // Set e-mail address
-            password: ''           // Start with empty password
+        const user = new User({
+            name: req.body.name.trim(),
+                              email: req.body.email.trim().toLowerCase(),
+                              role: 'customer'
         });
-    user.setPassword(req.body.password) // Set user password
-    const q = await user.save();
 
-    if (!q)
-    {
-        // Database returned no data
-        return res
-        .status(400)
-        .json(err);
-    } else {
-        // Return new user token
+        user.setPassword(req.body.password);
+
+        await user.save();
+
         const token = user.generateJWT();
-        return res
-        .status(200)
-        .json(token);
+
+        return res.status(201).json({
+            token
+        });
+    } catch (error) {
+        if (error.code === 11000) {
+            return res.status(409).json({
+                message:
+                'An account with that email address already exists.'
+            });
+        }
+
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({
+                message: error.message
+            });
+        }
+
+        console.error(error);
+
+        return res.status(500).json({
+            message: 'The account could not be created.'
+        });
     }
 };
 
 const login = (req, res) => {
-    // Validate message to ensure that email and password are present.
-    if (!req.body.email || !req.body.password) {
-        return res
-        .status(400)
-        .json({"message": "All fields required"});
+    if (
+        !req.body.email ||
+        !req.body.password
+    ) {
+        return res.status(400).json({
+            message:
+            'Email and password are required.'
+        });
     }
 
-    // Delegate authentication to passport module
-    passport.authenticate('local', (err, user, info) => {
-        if (err) {
-            // Error in Authentication Process
-            return res
-            .status(404)
-            .json(err);
-        }
+    passport.authenticate(
+        'local',
+        (error, user, info) => {
+            if (error) {
+                console.error(error);
 
-        if (user) { // Auth succeeded - generate JWT and return to caller
-            const token = user.generateJWT();
-            res
-            .status(200)
-            .json({token});
-        } else { // Auth failed return error
-            res
-            .status(401)
-            .json(info);
+                return res.status(500).json({
+                    message:
+                    'Authentication could not be completed.'
+                });
+            }
+
+            if (!user) {
+                return res.status(401).json(
+                    info || {
+                        message:
+                        'Incorrect email or password.'
+                    }
+                );
+            }
+
+            return res.status(200).json({
+                token: user.generateJWT()
+            });
         }
-    }) (req, res);
+    )(req, res);
 };
 
 module.exports = {

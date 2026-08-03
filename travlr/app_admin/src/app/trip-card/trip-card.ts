@@ -37,4 +37,19 @@ export class TripCard {
   public isLoggedIn(): boolean {
     return this.authentication.isLoggedIn();
   }
+
+  public bookTrip(trip: Trip): void {
+    this.router.navigate(
+      ['/book-trip'],
+      {
+        queryParams: {
+          tripCode: trip.code
+        }
+      }
+    );
+  }
+
+  public isAdmin(): boolean {
+    return this.authentication.isAdmin();
+  }
 }

@@ -61,6 +61,20 @@ const findByCode = async (tripCode) => {
 };
 
 /**
+ * Returns one trip identified by its trip code.
+ *
+ * This operation is used internally by the booking service while the
+ * existing public endpoint continues returning an array for compatibility.
+ */
+const findOneByCode = async (tripCode) => {
+    return TripModel
+    .findOne({
+        code: tripCode
+    })
+    .exec();
+};
+
+/**
  * Creates and saves a trip.
  */
 const create = async (tripData) => {
@@ -86,6 +100,7 @@ module.exports = {
     findCandidates,
     findAll,
     findByCode,
+    findOneByCode,
     create,
     updateByCode
 };

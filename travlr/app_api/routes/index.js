@@ -2,28 +2,78 @@ const express = require('express');
 
 const router = express.Router();
 
-// Import controllers routed by this module.
-const tripsController = require('../controllers/trips');
-const authController = require('../controllers/authentication');
+const tripsController =
+require('../controllers/trips');
 
-// Import reusable authentication middleware.
+const authController =
+require('../controllers/authentication');
+
+const bookingsController =
+require('../controllers/bookings');
+
 const {
   authenticateJWT
 } = require('../middleware/authentication');
 
-router.route('/register').post(authController.register);
-router.route('/login').post(authController.login);
+const {
+  requireRole
+} = require('../middleware/authorization');
 
-// Collection routes.
+router
+.route('/register')
+.post(authController.register);
+
+router
+.route('/login')
+.post(authController.login);
+
+// Trip collection routes.
 router
 .route('/trips')
 .get(tripsController.tripsList)
-.post(authenticateJWT, tripsController.tripsAddTrip);
+.post(
+  authenticateJWT,
+  requireRole('admin'),
+      tripsController.tripsAddTrip
+);
 
 // Individual trip routes.
 router
 .route('/trips/:tripCode')
 .get(tripsController.tripsFindByCode)
-.put(authenticateJWT, tripsController.tripsUpdateTrip);
+.put(
+  authenticateJWT,
+  requireRole('admin'),
+     tripsController.tripsUpdateTrip
+);
+
+// Booking collection routes.
+router
+.route('/bookings')
+.get(
+  authenticateJWT,
+  bookingsController.bookingsListOwn
+)
+.post(
+  authenticateJWT,
+  bookingsController.bookingsCreate
+);
+
+// Administrative booking aggregation.
+router
+.route('/bookings/admin/summary')
+.get(
+  authenticateJWT,
+  requireRole('admin'),
+     bookingsController.bookingsSummary
+);
+
+// Individual booking route.
+router
+.route('/bookings/:bookingCode')
+.get(
+  authenticateJWT,
+  bookingsController.bookingsFindByCode
+);
 
 module.exports = router;

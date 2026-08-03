@@ -1,9 +1,9 @@
+export type UserRole =
+| 'customer'
+| 'admin';
+
 export class User {
-  email: string;
-  name: string;
-  constructor()
-  {
-    this.email = '';
-    this.name = '';
-  }
+  public email = '';
+  public name = '';
+  public role: UserRole = 'customer';
 }

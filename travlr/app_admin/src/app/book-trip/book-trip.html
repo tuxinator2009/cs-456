@@ -1,0 +1,116 @@
+<section class="booking-page">
+  <h2>Book Trip</h2>
+
+  <div
+    *ngIf="errorMessage"
+    class="alert alert-danger"
+    role="alert"
+  >
+    {{ errorMessage }}
+  </div>
+
+  <div
+    *ngIf="isLoading"
+    aria-live="polite"
+  >
+    Loading...
+  </div>
+
+  <div
+    *ngIf="trip && !confirmation"
+    class="booking-panel"
+  >
+    <h3>{{ trip.name }}</h3>
+
+    <p>
+      <strong>Trip Code:</strong>
+      {{ trip.code }}
+    </p>
+
+    <p>
+      <strong>Resort:</strong>
+      {{ trip.resort }}
+    </p>
+
+    <p>
+      <strong>Duration:</strong>
+      {{ trip.length }}
+    </p>
+
+    <p>
+      <strong>Price:</strong>
+      {{ trip.perPerson | currency:'USD' }}
+      per person
+    </p>
+
+    <form
+      (ngSubmit)="submitBooking()"
+    >
+      <div class="form-group">
+        <label for="travelerCount">
+          Number of Travelers
+        </label>
+
+        <input
+          id="travelerCount"
+          name="travelerCount"
+          type="number"
+          class="form-control"
+          min="1"
+          max="10"
+          step="1"
+          required
+          [(ngModel)]="numberOfTravelers"
+        >
+      </div>
+
+      <p class="estimated-total">
+        <strong>Estimated Total:</strong>
+        {{
+          (
+            +trip.perPerson *
+            numberOfTravelers
+          ) | currency:'USD'
+        }}
+      </p>
+
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="isLoading"
+      >
+        Confirm Booking
+      </button>
+    </form>
+  </div>
+
+  <div
+    *ngIf="confirmation"
+    class="alert alert-success"
+  >
+    <h3>Booking Confirmed</h3>
+
+    <p>
+      Your booking code is
+      <strong>
+        {{ confirmation.bookingCode }}
+      </strong>.
+    </p>
+
+    <p>
+      Total:
+      {{
+        confirmation.totalPrice |
+        currency:'USD'
+      }}
+    </p>
+
+    <button
+      type="button"
+      class="btn btn-primary"
+      (click)="viewBookings()"
+    >
+      View My Bookings
+    </button>
+  </div>
+</section>

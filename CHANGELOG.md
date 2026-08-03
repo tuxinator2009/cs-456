@@ -109,3 +109,69 @@
 - Added Node tests for price parsing, duration parsing, relevance scoring, numeric filtering, and deterministic sorting.
 - Added a root `npm test` command using Node's built-in test runner.
 - Verified valid and invalid search requests through API tests.
+
+## August 2026 — CS 499 Milestone Four: Database Enhancement
+
+### Booking and Reservation Data Model
+
+- Added a MongoDB booking collection with Mongoose schema validation.
+- Added references between booking, user, and trip documents.
+- Added immutable booking-time snapshots for trip code, trip name, travel date, and price.
+- Added validation for traveler count, booking status, price, and required references.
+- Added a unique public booking-code index.
+- Added compound indexes for:
+  - User booking history by date
+  - Trip and booking status
+  - Status and booking date
+- Added automatic document timestamps.
+
+### Database Access and Aggregation
+
+- Added a booking repository following the established repository pattern.
+- Added customer-specific booking retrieval ordered by booking date.
+- Added populated trip information to booking responses.
+- Added a MongoDB aggregation pipeline that:
+  - Filters confirmed bookings
+  - Groups records by trip
+  - Counts bookings
+  - Totals travelers
+  - Calculates estimated revenue
+  - Identifies earliest and latest booking dates
+  - Joins current trip details
+  - Sorts results by revenue and trip name
+
+### Authentication and Authorization
+
+- Added customer and administrator user roles.
+- Added the role to JWT payloads.
+- Prevented public registration from assigning administrator privileges.
+- Added reusable role-based authorization middleware.
+- Restricted trip creation and modification to administrators.
+- Restricted administrative booking summaries to administrators.
+- Added resource-level ownership checks for individual booking access.
+- Prevented authenticated customers from accessing bookings owned by other users.
+- Preserved administrator access for legitimate support and reporting tasks.
+
+### Angular Booking Interface
+
+- Added a booking form connected to individual trips.
+- Added customer booking history.
+- Added an administrator-only booking summary page.
+- Added typed Angular booking and booking-summary models.
+- Added a dedicated booking data service.
+- Added authenticated and administrator route guards.
+- Added role-aware navigation and trip-card controls.
+- Added loading, validation, error, empty-result, and confirmation states.
+
+### Testing and Verification
+
+- Added automated tests for:
+  - Booking total calculation
+  - Public booking-code format
+  - Customer ownership authorization
+  - Cross-user access denial
+  - Administrator access
+- Verified customer booking creation and retrieval.
+- Verified administrative aggregation results.
+- Verified customers cannot access administrator reporting.
+- Verified customers cannot create or modify trip records.
